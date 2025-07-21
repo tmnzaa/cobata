@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel Bot WhatsApp</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    function sendCommand() {
+      const cmd = document.getElementById("cmd").value;
+      socket.emit("command", cmd);
+      document.getElementById("cmd").value = "";
+    }
+
+    function startBot() {
+      socket.emit("startBot");
+    }
+
+    function stopBot() {
+      socket.emit("stopBot");
+    }
+
+    socket.on("output", data => {
+      const terminal = document.getElementById("terminal");
+      terminal.innerHTML += data + "<br>";
+      terminal.scrollTop = terminal.scrollHeight;
+    });
+
+    socket.on("qr", data => {
+      const qrImg = document.getElementById("qr-img");
+      qrImg.src = data;
+      qrImg.onclick = () => {
+        const popup = document.getElementById("qr-popup");
+        popup.style.display = "flex";
+        document.getElementById("qr-large").src = data;
+      };
+    });
+
+    function closePopup() {
+      document.getElementById("qr-popup").style.display = "none";
+    }
+  </script>
+  <style>
+    body { font-family: monospace; background: #111; color: #0f0; margin: 0; padding: 10px; }
+    #terminal { background: #000; padding: 10px; height: 60vh; overflow-y: auto; border: 1px solid #0f0; }
+    input { width: 100%; padding: 8px; margin-top: 5px; background: #222; color: #0f0; border: none; }
+    button { margin: 5px 2px; padding: 6px 12px; background: #0f0; border: none; cursor: pointer; }
+    img#qr-img { width: 80px; margin-bottom: 10px; cursor: pointer; }
+
+    #qr-popup {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8); justify-content: center; align-items: center;
+      display: none;
+    }
+    #qr-popup img { width: 300px; }
+  </style>
+</head>
+<body>
+  <img id="qr-img" alt="QR kecil di sini" />
+  <div id="terminal"></div>
+  <input id="cmd" placeholder="Ketik command..." onkeydown="if(event.key === 'Enter') sendCommand()">
+  <button onclick="startBot()">Start Bot</button>
+  <button onclick="stopBot()">Stop Bot</button>
+
+  <div id="qr-popup" onclick="closePopup()">
+    <img id="qr-large" alt="QR besar di sini">
+  </div>
+</body>
+</html>

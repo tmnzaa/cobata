@@ -1,0 +1,33 @@
+{
+  "name": "tacabot777",
+  "version": "1.0.0",
+  "description": "Bot WhatsApp berbasis Baileys, scan QR langsung jalan",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently \"node index.js\" \"node server.js\""
+  },
+  "author": "Tacabot Team",
+  "license": "MIT",
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "@vitalets/google-translate-api": "^9.2.1",
+    "@whiskeysockets/baileys": "^6.7.18",
+    "axios": "^1.10.0",
+    "concurrently": "^9.2.0",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "fs-extra": "^11.3.0",
+    "jimp": "^0.16.13",
+    "multer": "^2.0.2",
+    "node-fetch": "^3.3.2",
+    "node-gtts": "^2.0.2",
+    "node-schedule": "^2.1.1",
+    "pino": "^9.7.0",
+    "qrcode": "^1.5.4",
+    "qrcode-terminal": "^0.12.0",
+    "socket.io": "^4.8.1",
+    "tiklydown-sanzy": "^1.0.0",
+    "webp-converter": "^2.2.3"
+  }
+}
