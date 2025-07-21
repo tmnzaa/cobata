@@ -57,51 +57,60 @@ try {
 }
 
 async function startBot() {
-  const { state, saveCreds } = await useMultiFileAuthState('./session')
+  const projectName = process.env.PROJECT_NAME || 'default-bot';
+  const sessionFolder = `./sessions/${projectName}`;
+  const qrFile = `${sessionFolder}/qr.txt`;
+
+  const { state, saveCreds } = await useMultiFileAuthState(sessionFolder);
 
   const sock = makeWASocket({
     auth: state,
     logger: P({ level: 'silent' }),
-    printQRInTerminal: true
-  })
+    printQRInTerminal: false
+  });
 
-  sock.ev.on('creds.update', saveCreds)
+  console.log(`[${projectName}] ▶️ Bot sedang dijalankan...`);
+
+  sock.ev.on('creds.update', saveCreds);
 
   sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
-  if (qr) {
-    qrShown = true
-    console.log('\n📲 Scan QR untuk login:')
+    if (qr) {
+      console.log(`[${projectName}] 📲 QR tersedia, scan sekarang:`);
 
-    // Print QR di terminal (ascii kecil)
-try {
-  const qrTerminal = await QRCode.toString(qr, { type: 'terminal', small: true })
-  console.log(qrTerminal)
-} catch (err) {
-  console.error('Error generate QR terminal:', err)
-}
+      try {
+        const qrTerminal = await QRCode.toString(qr, { type: 'terminal', small: true });
+        console.log(qrTerminal);
 
-    // Simpan QR sebagai base64 PNG di file ./session/qr.txt (pastikan folder ada)
-    try {
-      const qrDataUrl = await QRCode.toDataURL(qr)  // ini base64 data URL (image/png)
-      await fs.ensureDir('./session')
-      await fs.writeFile('./session/qr.txt', qrDataUrl, 'utf-8')
-    } catch (err) {
-      console.error('❌ Gagal simpan QR:', err)
+        const qrDataUrl = await QRCode.toDataURL(qr);
+        await fs.ensureDir(sessionFolder);
+        await fs.writeFile(qrFile, qrDataUrl, 'utf-8');
+      } catch (err) {
+        console.error(`[${projectName}] ❌ Gagal generate QR:`, err.message);
+      }
     }
-  }
 
-  if (connection === 'open') {
-    console.log('✅ Bot berhasil terhubung ke WhatsApp!')
-  }
+    if (connection === 'open') {
+      console.log(`[${projectName}] ✅ Bot berhasil terhubung ke WhatsApp!`);
+      // Hapus QR setelah connect
+      if (fs.existsSync(qrFile)) {
+        fs.unlinkSync(qrFile);
+      }
+    }
 
-  if (connection === 'close') {
-    const code = new Boom(lastDisconnect?.error)?.output?.statusCode
-    const reconnect = code !== DisconnectReason.loggedOut
-    console.log('❌ Terputus. Reconnect:', reconnect)
-    qrShown = false
-    if (reconnect) startBot()
-  }
-})
+    if (connection === 'close') {
+      const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
+      const reconnect = reason !== DisconnectReason.loggedOut;
+      console.log(`[${projectName}] ❌ Bot terputus (${reason}), reconnect: ${reconnect}`);
+
+      if (!reconnect) {
+        console.log(`[${projectName}] ⚠️ Logout detected. Menghapus session...`);
+        await fs.remove(sessionFolder);
+      }
+
+      qrShown = false;
+      if (reconnect) startBot();
+    }
+  })
 
   // 📥 Message handler
 sock.ev.on('messages.upsert', async ({ messages }) => {
