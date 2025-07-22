@@ -56,7 +56,7 @@ try {
   dbCache = {}
 }
 
-async function startBot() {
+async function startBot(io) {
   const projectName = process.env.PROJECT_NAME || 'default-bot';
   const sessionFolder = `./sessions/${projectName}`;
   const qrFile = `${sessionFolder}/qr.txt`;
@@ -78,10 +78,8 @@ async function startBot() {
       console.log(`[${projectName}] 📲 QR tersedia, scan sekarang:`);
 
       try {
-        const qrTerminal = await QRCode.toString(qr, { type: 'terminal', small: true });
-        console.log(qrTerminal);
-
         const qrDataUrl = await QRCode.toDataURL(qr);
+        io.to(projectName).emit('qr', qrDataUrl); // 🔥 Emit QR ke client via socket
         await fs.ensureDir(sessionFolder);
         await fs.writeFile(qrFile, qrDataUrl, 'utf-8');
       } catch (err) {
@@ -91,7 +89,8 @@ async function startBot() {
 
     if (connection === 'open') {
       console.log(`[${projectName}] ✅ Bot berhasil terhubung ke WhatsApp!`);
-      // Hapus QR setelah connect
+      io.to(projectName).emit('connected'); // 🔥 Emit koneksi sukses ke client
+
       if (fs.existsSync(qrFile)) {
         fs.unlinkSync(qrFile);
       }
@@ -107,8 +106,7 @@ async function startBot() {
         await fs.remove(sessionFolder);
       }
 
-      qrShown = false;
-      if (reconnect) startBot();
+      if (reconnect) startBot(io); // 🔁 Rekoneksi tetap passing io
     }
   })
 
@@ -282,4 +280,4 @@ process.on('unhandledRejection', err => {
   console.error('💥 Unhandled Rejection:', err)
 })
 
-startBot()
+module.exports = { startBot };
