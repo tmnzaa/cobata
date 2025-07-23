@@ -79,7 +79,7 @@ async function startBot(io) {
 
       try {
         const qrDataUrl = await QRCode.toDataURL(qr);
-        io.to(projectName).emit('qr', qrDataUrl); // 🔥 Emit QR ke client via socket
+       io.emit('qr', { project: projectName, qr: qrDataUrl });
         await fs.ensureDir(sessionFolder);
         await fs.writeFile(qrFile, qrDataUrl, 'utf-8');
       } catch (err) {
@@ -89,7 +89,7 @@ async function startBot(io) {
 
     if (connection === 'open') {
       console.log(`[${projectName}] ✅ Bot berhasil terhubung ke WhatsApp!`);
-      io.to(projectName).emit('connected'); // 🔥 Emit koneksi sukses ke client
+     io.emit('connected', projectName);
 
       if (fs.existsSync(qrFile)) {
         fs.unlinkSync(qrFile);
